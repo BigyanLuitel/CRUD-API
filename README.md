@@ -46,6 +46,8 @@ To add a task with `curl`, use:
 curl -i -X POST http://localhost:8000/tasks -H "Content-Type: application/json" -d "{\"title\":\"Buy milk\"}"
 ```
 
+**Note:** The AI-generated code lives on a separate branch (`AI-version`), kept apart from the hand-built implementation on `main`.
+
 ## Screenshots
 
 ![API screenshot](image.png)
