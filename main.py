@@ -1,15 +1,45 @@
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel
+from sqlalchemy import Column, Column, Integer, String, Boolean, create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session
 
 app = FastAPI()
+DATABASE_URL = "sqlite:///./tasks.db"
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
 
-tasks = [
-    {"id":1, "title" : "Open Shop","done":True},
-    {"id":2, "title" : "Buy Groceries","done":False},
-    {"id":3, "title" : "Clean Shop","done":False}
-]
+class Task(Base):
+    __tablename__ = "tasks"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, index=True)
+    done = Column(Boolean, default=False)
+
+Base.metadata.create_all(bind=engine)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+def seed_tasks(db: Session):
+    if db.query(Task).count() == 0:
+        initial_tasks = [
+            Task(title="Task 1", done=False),
+            Task(title="Task 2", done=True),
+            Task(title="Task 3", done=False),
+        ]
+        db.add_all(initial_tasks)
+        db.commit()
+
+with SessionLocal() as db:
+    seed_tasks(db)
+
 class TaskCreate(BaseModel):
     title: str = ""
 
@@ -26,15 +56,15 @@ def get_health():
     return {"status" : "ok"}
 
 @app.get("/tasks")
-def get_tasks():
-    return tasks
+def get_tasks(db: Session = Depends(get_db)):
+    return db.query(Task).all()
 
 @app.get("/tasks/{task_id}")
-def get_task(task_id: int):
-    for task in tasks:
-        if task["id"] == task_id:
-            return task
-    raise HTTPException(status_code=404, detail="Task not found")
+def get_task(task_id: int, db: Session = Depends(get_db)):
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return task
 
 @app.post("/tasks")
 def create_task(task: TaskCreate):
