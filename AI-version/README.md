@@ -59,3 +59,14 @@ The example tasks already filled in — a minor detail of spec, but that could b
 
 One sentence description of the changes between rounds:
 Every structural gap in Prompt 1 (missing root/health endpoints, wrong delete status code, no partial updates) was addressed by specifying them explicitly in Prompt 2, but an empty starter list indicates that even a detailed prompt may leave requirements unaddressed that an AI might be able to miss.
+
+## AI vs Me (Stage 6 — the AI rematch)
+
+**Prompt used:**
+"I have an existing FastAPI to-do list API that currently stores tasks in memory. Migrate it to use a SQLite database via plain sqlite3 (no ORM). Requirements: create the table automatically if missing, seed 3 tasks only if empty, use parameterized queries, keep all 5 endpoints with identical behavior and status codes (200/201/204/400/404)."
+
+**Note:** The AI-generated code lives on a separate branch (`AI-version`), kept apart from the hand-built implementation on `main`.
+
+**What the AI did well:**
+
+- Used
