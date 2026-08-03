@@ -78,23 +78,28 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
     return new_task
 
 @app.put("/tasks/{task_id}")
-def update_task(task_id: int, task: TaskUpdate):
-    for existing_task in tasks:
-        if existing_task["id"] == task_id:
-            if task.title is not None:
-                if not task.title.strip():
-                    raise HTTPException(status_code=400, detail="Title cannot be empty")
-                existing_task["title"] = task.title
-            if task.done is not None:
-                existing_task["done"] = task.done
-            return existing_task
-    
+def update_task(task_id: int, task: TaskUpdate, db: Session = Depends(get_db)):
+    existing_task = db.query(Task).filter(Task.id == task_id).first()
+    if not existing_task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    if task.title is not None:
+        if not task.title.strip():
+            raise HTTPException(status_code=400, detail="Title cannot be empty")
+        existing_task.title = task.title
+    if task.done is not None:
+        existing_task.done = task.done
+    db.commit()
+    db.refresh(existing_task)
+    return existing_task
+
     raise HTTPException(status_code=404, detail="Task not found")
 
 @app.delete("/tasks/{task_id}", status_code=204)
-def delete_task(task_id: int):
-    for index, task in enumerate(tasks):
-        if task["id"] == task_id:
-            del tasks[index]
-            return
-    raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+def delete_task(task_id: int, db: Session = Depends(get_db)):
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+    db.delete(task)
+    db.commit()
+    return {"message": f"Task {task_id} deleted successfully"}
