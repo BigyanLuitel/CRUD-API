@@ -67,14 +67,15 @@ def get_task(task_id: int, db: Session = Depends(get_db)):
     return task
 
 @app.post("/tasks")
-def create_task(task: TaskCreate):
+def create_task(task: TaskCreate, db: Session = Depends(get_db)):
     if not task.title:
         raise HTTPException(status_code=400, detail="Title is required")
     
-    next_id = max(task["id"] for task in tasks) + 1 if tasks else 1
-    new_task = {"id": next_id, "title": task.title, "done": "False"}
-    tasks.append(new_task)
-    raise HTTPException(status_code=201, detail="Task created successfully")
+    new_task = Task(title=task.title, done=False)
+    db.add(new_task)
+    db.commit()
+    db.refresh(new_task)
+    return new_task
 
 @app.put("/tasks/{task_id}")
 def update_task(task_id: int, task: TaskUpdate):
