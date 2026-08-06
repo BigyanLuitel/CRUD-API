@@ -83,4 +83,32 @@ SELECT * FROM tasks WHERE done = 1;
 
 This returned 1 row — only the seeded "Finish FlyRank assignment" task, before any updates. Running an `UPDATE` in DB Browser and then calling `GET /tasks` through the API immediately reflected the change with no restart needed, confirming the API and DB Browser read the exact same file.
 
-![Database in DB Browser](screenshots/db-browser.png)
+## Running with Docker
+
+This project runs as a two-container stack: the API and a PostgreSQL database, both managed by Docker Compose.
+
+**Why Postgres + Docker:** SQLite (Assignment 2) works for a single file on one machine, but real backends run against a proper database server. Docker means Postgres runs identically on any machine — no manual install, no version conflicts, no "works on my machine."
+
+**Setup:**
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+That's it — one command builds the app image, starts Postgres, creates the `tasks` table, and seeds 3 example tasks on first run.
+
+**Environment variables:** see `.env.example` for the required `DATABASE_URL` format.
+
+**Example request:**
+
+```bash
+curl -i http://localhost:8000/tasks
+```
+
+**Persistence:** data survives a full stack restart — verified by creating a task, running `docker compose down` then `docker compose up`, and confirming the task is still there. This works because the database's data lives in a Docker **volume**, which outlives the containers themselves.
+
+**Database screenshot:**
+![Postgres data via psql](image1.png)
+
+![Postgres data via psql](image.png)
